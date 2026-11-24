@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ada Kejutan Buat Kamu! 🎁</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: #fff; user-select: none; -webkit-user-select: none; touch-action: manipulation;
+    background: radial-gradient(circle at 20% 10%, #5b2a86 0%, #2a1250 45%, #12082b 100%);
+    height: 100dvh; position: relative;
+  }
+  /* bintang latar */
+  #stars { position: fixed; inset: 0; pointer-events: none; }
+  #stars i {
+    position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #fff;
+    opacity: .6; animation: twinkle 3s infinite ease-in-out;
+  }
+  @keyframes twinkle { 0%,100% { opacity: .15; transform: scale(.8); } 50% { opacity: .9; transform: scale(1.3); } }
+
+  .screen {
+    position: absolute; inset: 0; display: none; flex-direction: column;
+    align-items: center; justify-content: center; padding: 24px; text-align: center; z-index: 2;
+  }
+  .screen.active { display: flex; animation: fadeIn .5s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+  h1 { font-size: 30px; line-height: 1.25; margin-bottom: 14px; }
+  h1 span { background: linear-gradient(90deg, #ff9ad5, #ffd36e); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  p.sub { color: #d6c8f0; font-size: 16px; line-height: 1.6; max-width: 340px; margin-bottom: 28px; }
+  .big-emoji { font-size: 80px; margin-bottom: 18px; animation: float 2.4s ease-in-out infinite; }
+  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+
+  .btn {
+    border: none; cursor: pointer; font: inherit; font-weight: 700; font-size: 17px; color: #2a1250;
+    padding: 14px 32px; border-radius: 999px;
+    background: linear-gradient(135deg, #ffd36e, #ff9ad5);
+    box-shadow: 0 8px 24px rgba(255, 154, 213, .35);
+    transition: transform .15s;
+  }
+  .btn:active { transform: scale(.94); }
+
+  /* ---------- TEBAK-TEBAKAN ---------- */
+  #game { justify-content: flex-start; padding: 0; }
+  .hud { width: 100%; padding: calc(18px + env(safe-area-inset-top)) 20px 12px; }
+  .hud .row { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 8px; font-size: 15px; }
+  .bar { height: 10px; border-radius: 99px; background: #ffffff22; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; border-radius: 99px; background: linear-gradient(90deg, #ff9ad5, #ffd36e); transition: width .35s; }
+  .quiz { width: 100%; max-width: 440px; padding: 20px; margin: auto 0; text-align: left; }
+  .qnum { color: #ffd36e; font-weight: 700; font-size: 14px; letter-spacing: .5px; }
+  #qText { font-size: 24px; line-height: 1.35; margin: 8px 0 22px; }
+  .opt {
+    display: block; width: 100%; text-align: left; padding: 15px 18px; margin-bottom: 12px;
+    font: inherit; font-size: 17px; color: #fff; cursor: pointer;
+    background: #ffffff14; border: 1.5px solid #ffffff33; border-radius: 16px;
+    transition: transform .12s, background .2s, border-color .2s;
+  }
+  .opt:active { transform: scale(.98); }
+  .opt.right { background: #22c55e44; border-color: #4ade80; }
+  .opt.wrong { background: #ef444444; border-color: #f87171; opacity: .7; animation: shakeX .4s; }
+  #qFeedback { min-height: 28px; margin-top: 6px; font-weight: 600; font-size: 16px; }
+  #qFeedback.ok { color: #86efac; }
+  #qFeedback.bad { color: #fca5a5; }
+
+  /* ---------- HADIAH ---------- */
+  #giftBtn { background: none; border: none; font-size: 120px; cursor: pointer; animation: shake 1.2s infinite; filter: drop-shadow(0 10px 24px #ff9ad566); }
+  @keyframes shake { 0%,100% { transform: rotate(0); } 15% { transform: rotate(-9deg) scale(1.05); } 30% { transform: rotate(9deg) scale(1.05); } 45% { transform: rotate(-6deg); } 60% { transform: rotate(6deg); } 75% { transform: rotate(0); } }
+
+  /* ---------- PESAN ---------- */
+  .card {
+    width: 100%; max-width: 380px; min-height: 240px; padding: 30px 24px; border-radius: 26px;
+    background: linear-gradient(160deg, #ffffff22, #ffffff0d); border: 1px solid #ffffff33;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; line-height: 1.65; box-shadow: 0 20px 50px #00000044;
+  }
+  .dots { display: flex; gap: 6px; margin: 18px 0; }
+  .dots i { width: 8px; height: 8px; border-radius: 50%; background: #ffffff33; transition: .3s; }
+  .dots i.on { background: #ffd36e; transform: scale(1.3); }
+  #nextBtn { visibility: hidden; }
+  #nextBtn.show { visibility: visible; }
+  .from { margin-top: 14px; color: #d6c8f0; font-size: 15px; }
+
+  /* ---------- KUNCI ---------- */
+  #lock .lock-icon { font-size: 72px; margin-bottom: 14px; }
+  #codeInput {
+    width: 100%; max-width: 280px; padding: 14px 16px; margin-bottom: 14px;
+    font: inherit; font-size: 20px; text-align: center; letter-spacing: 4px; color: #fff;
+    background: #ffffff14; border: 1.5px solid #ffffff44; border-radius: 16px; outline: none;
+    user-select: text; -webkit-user-select: text;
+  }
+  #codeInput:focus { border-color: #ffd36e; }
+  #lockErr { height: 22px; margin-bottom: 8px; color: #ff9aa8; font-size: 14px; }
+  .shake { animation: shakeX .45s; }
+  @keyframes shakeX { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-10px); } 40% { transform: translateX(10px); } 60% { transform: translateX(-7px); } 80% { transform: translateX(7px); } }
+
+  canvas#confetti { position: fixed; inset: 0; pointer-events: none; z-index: 20; }
+</style>
+</head>
+<body>
+
+<div id="stars"></div>
+
+<!-- 0. KUNCI -->
+<section class="screen active" id="lock">
+  <div class="lock-icon">🔒</div>
+  <h1><span>Kejutan Terkunci</span></h1>
+  <p class="sub">Masukkan kode rahasia untuk membukanya.</p>
+  <input id="codeInput" type="password" placeholder="• • • •" autocomplete="off" autocapitalize="off" spellcheck="false">
+  <div id="lockErr"></div>
+  <button class="btn" id="unlockBtn">Buka 🔓</button>
+</section>
+
+<!-- 1. PEMBUKA -->
+<section class="screen" id="intro">
+  <div class="big-emoji">🎁</div>
+  <h1>Hai, <span id="namaTeman"></span>!</h1>
+  <p class="sub">Ada kejutan spesial buat kamu.<br>Tapi tenang, nggak langsung dikasih… <b>jawab tebak-tebakan tentang <span id="namaPengirim"></span> dulu ya!</b> 😏</p>
+  <button class="btn" id="startBtn">Mulai Tebak-tebakan 🧠</button>
+</section>
+
+<!-- 2. TEBAK-TEBAKAN -->
+<section class="screen" id="game">
+  <div class="hud">
+    <div class="row"><span>🧠 Seberapa kenal kamu sama <span id="namaPengirim2"></span>?</span></div>
+    <div class="bar"><i id="barFill"></i></div>
+  </div>
+  <div class="quiz">
+    <div class="qnum" id="qNum"></div>
+    <h2 id="qText"></h2>
+    <div id="opts"></div>
+    <div id="qFeedback"></div>
+  </div>
+</section>
+
+<!-- 3. HADIAH -->
+<section class="screen" id="gift">
+  <h1><span>Yeay, kamu berhasil! 🎉</span></h1>
+  <p class="sub">Ini kejutannya. Ketuk kadonya untuk membuka!</p>
+  <button id="giftBtn" aria-label="Buka kado">🎁</button>
+</section>
+
+<!-- 4. PESAN -->
+<section class="screen" id="msg">
+  <div class="card"><div id="msgText"></div></div>
+  <div class="dots" id="dots"></div>
+  <button class="btn" id="nextBtn">Lanjut ▶</button>
+  <div class="from" id="from"></div>
+</section>
+
+<canvas id="confetti"></canvas>
+
+<script>
+  // =====================================================================
+  //  UBAH BAGIAN INI SESUAI TEMANMU
+  // =====================================================================
+  const CONFIG = {
+    NAMA_TEMAN: "Sahabatku",     // nama temanmu
+    PENGIRIM: "Dayat",           // namamu
+    // Tebak-tebakan tentang kamu. Tiap soal:
+    //   q        = pertanyaan
+    //   pilihan  = pilihan jawaban (boleh 2-5 pilihan)
+    //   benar    = nomor jawaban yang benar, dimulai dari 0 (0 = pilihan pertama)
+    //   komentar = (opsional) kalimat yang muncul saat temanmu menjawab benar
+    // Tulis {pengirim} untuk otomatis diganti namamu, {nama} untuk nama temanmu.
+    QUIZ: [
+      {
+        q: "mie apa yang paling {pengirim} suka?",
+        pilihan: ["mie goreng", "mie soto", "mie rendang", "mie aceh"],
+        benar: 2,
+        komentar: "Tepat! Nggak pernah bosan deh 😋"
+      },
+      {
+        q: "Barang apa yang paling {pengirim} suka?",
+        pilihan: ["HP", "Headphone", "Sepatu", "Jam tangan"],
+        benar: 0,
+        komentar: "Wah, kamu emang kenal banget! "
+      },
+      {
+        q: "Kalau lagi santai, {pengirim} biasanya ngapain?",
+        pilihan: ["Main game", "Tidur", "Nongkrong", "Ngoding"],
+        benar: 0,
+        komentar: "Betul banget! "
+      }
+    ],
+    // Tempel hasil dari buat-kode.html di antara tanda kutip di bawah ini.
+    DATA_TERKUNCI: "SaF7bCltTMNpONJqQY+X/TpSdUjL0V3gQzAn3hFsnbCBu0v6r4ON7btqhIbIjcwdkBZO0XiWWvaQqORVbr4moskorbrhRrd7rrl9w6eOEsn7xbFcwpS+WAFkiSxvdE9HBykkDsQsUZGGbe5ZSHi8s9H4wzZOEPTFtEl9KSC26bz3iHUKHNBYy1NR1xBacd90/AY/0y3k57kRH+9DYB8gpxvBWlO3pzEZMnWpwuI6bJSxyfbREbtiSw3X1rTubQ8/u2W3WI5hJ8KSxq04+/Jua+P8rk6DLy7UKUogFqHJ3bcD9x+8KjCUQjcN7W+1I3k2Y/C82E+ru/UihwqggH1ya5eVkUiCH9SQQ2NeaYEJp1Qz/QvKWXDRdY8="
+  };
+  // =====================================================================
+
+  const $ = (id) => document.getElementById(id);
+  const QUIZ = CONFIG.QUIZ;
+  let PESAN = [];   // diisi setelah kode benar
+
+  // ---------- util ----------
+  function show(id) {
+    document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+    $(id).classList.add("active");
+  }
+  function vibrate(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} }
+  const fill = (t) => t.replace(/\{nama\}/g, CONFIG.NAMA_TEMAN).replace(/\{pengirim\}/g, CONFIG.PENGIRIM);
+
+  // bintang latar
+  (function () {
+    const box = $("stars");
+    for (let i = 0; i < 45; i++) {
+      const s = document.createElement("i");
+      s.style.left = Math.random() * 100 + "%";
+      s.style.top = Math.random() * 100 + "%";
+      s.style.animationDelay = Math.random() * 3 + "s";
+      box.appendChild(s);
+    }
+  })();
+
+  $("namaTeman").textContent = CONFIG.NAMA_TEMAN;
+  $("namaPengirim").textContent = CONFIG.PENGIRIM;
+  $("namaPengirim2").textContent = CONFIG.PENGIRIM;
+
+  // ---------- konfeti ----------
+  const cv = $("confetti"), cx = cv.getContext("2d");
+  let parts = [], raf = null;
+  function resize() { cv.width = innerWidth; cv.height = innerHeight; }
+  resize(); addEventListener("resize", resize);
+
+  function confetti(count = 140) {
+    const colors = ["#ff9ad5", "#ffd36e", "#8be9fd", "#b69cff", "#7dffb3", "#ff7b7b"];
+    for (let i = 0; i < count; i++) {
+      parts.push({
+        x: innerWidth / 2, y: innerHeight * 0.45,
+        vx: (Math.random() - 0.5) * 16, vy: Math.random() * -15 - 4,
+        w: 6 + Math.random() * 6, h: 8 + Math.random() * 8,
+        r: Math.random() * 6, vr: (Math.random() - 0.5) * 0.4,
+        c: colors[(Math.random() * colors.length) | 0], life: 1
+      });
+    }
+    if (!raf) loop();
+  }
+  function loop() {
+    cx.clearRect(0, 0, cv.width, cv.height);
+    parts.forEach((p) => {
+      p.vy += 0.35; p.x += p.vx; p.y += p.vy; p.r += p.vr; p.vx *= 0.99; p.life -= 0.006;
+      cx.save(); cx.translate(p.x, p.y); cx.rotate(p.r);
+      cx.globalAlpha = Math.max(p.life, 0); cx.fillStyle = p.c;
+      cx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); cx.restore();
+    });
+    parts = parts.filter((p) => p.life > 0 && p.y < cv.height + 40);
+    raf = parts.length ? requestAnimationFrame(loop) : null;
+    if (!raf) cx.clearRect(0, 0, cv.width, cv.height);
+  }
+
+  // ---------- TEBAK-TEBAKAN ----------
+  const SALAH = [
+    "Hmm, bukan itu 😅 Coba lagi!",
+    "Kurang tepat! Kamu kurang kenal {pengirim} nih 😜",
+    "Hampir… eh nggak deng 😆 Coba lagi!",
+    "Aduh salah! Pikir lagi ya 🤔"
+  ];
+  let qi = 0, answered = false;
+
+  function feedback(text, kind) {
+    const f = $("qFeedback");
+    f.textContent = text;
+    f.className = kind;
+  }
+
+  function showQuestion() {
+    const item = QUIZ[qi];
+    answered = false;
+    $("qNum").textContent = "SOAL " + (qi + 1) + " DARI " + QUIZ.length;
+    $("barFill").style.width = (qi / QUIZ.length) * 100 + "%";
+    $("qText").textContent = fill(item.q);
+    feedback("", "");
+    const box = $("opts");
+    box.innerHTML = "";
+    item.pilihan.forEach((p, i) => {
+      const b = document.createElement("button");
+      b.className = "opt";
+      b.textContent = fill(p);
+      b.onclick = () => choose(b, i);
+      box.appendChild(b);
+    });
+  }
+
+  function choose(btn, i) {
+    if (answered || btn.disabled) return;
+    const item = QUIZ[qi];
+    if (i === item.benar) {
+      answered = true;
+      btn.classList.add("right");
+      feedback(fill(item.komentar || "Benar! 🎉"), "ok");
+      vibrate(40);
+      confetti(35);
+      setTimeout(nextQuestion, 1500);
+    } else {
+      btn.classList.add("wrong");
+      btn.disabled = true;
+      feedback(fill(SALAH[(Math.random() * SALAH.length) | 0]), "bad");
+      vibrate([60, 40, 60]);
+    }
+  }
+
+  function nextQuestion() {
+    qi++;
+    if (qi >= QUIZ.length) return finishGame();
+    showQuestion();
+  }
+
+  function startGame() {
+    qi = 0;
+    show("game");
+    showQuestion();
+  }
+
+  function finishGame() {
+    $("barFill").style.width = "100%";
+    setTimeout(() => {
+      show("gift");
+      confetti(110);
+    }, 500);
+  }
+
+  // ---------- PESAN ----------
+  const dots = $("dots");
+  let idx = 0, typer = null, typing = false, fullText = "";
+
+  function buildDots() {
+    dots.innerHTML = "";
+    PESAN.forEach(() => dots.appendChild(document.createElement("i")));
+  }
+  function showMessage(i) {
+    idx = i;
+    [...dots.children].forEach((d, n) => d.classList.toggle("on", n <= i));
+    $("nextBtn").classList.remove("show");
+    fullText = fill(PESAN[i]);
+    const el = $("msgText");
+    el.textContent = "";
+    let n = 0;
+    typing = true;
+    clearInterval(typer);
+    typer = setInterval(() => {
+      el.textContent = fullText.slice(0, ++n);
+      if (n >= fullText.length) doneTyping();
+    }, 38);
+  }
+  function doneTyping() {
+    clearInterval(typer);
+    typing = false;
+    $("msgText").textContent = fullText;
+    const last = idx === PESAN.length - 1;
+    $("nextBtn").textContent = last ? "Ulangi 🔁" : "Lanjut ▶";
+    $("nextBtn").classList.add("show");
+    if (last) {
+      $("from").textContent = "— dari " + CONFIG.PENGIRIM + " 💜";
+      confetti(180);
+      vibrate([60, 40, 60]);
+    }
+  }
+
+  // ---------- KUNCI (dekripsi dengan kode) ----------
+  const enc = new TextEncoder(), dec = new TextDecoder();
+  async function deriveKey(code, salt) {
+    const base = await crypto.subtle.importKey("raw", enc.encode(code), "PBKDF2", false, ["deriveKey"]);
+    return crypto.subtle.deriveKey(
+      { name: "PBKDF2", salt, iterations: 150000, hash: "SHA-256" },
+      base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+  }
+  async function decryptText(code, data) {
+    const bin = atob(data);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const key = await deriveKey(code, bytes.slice(0, 16));
+    const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: bytes.slice(16, 28) }, key, bytes.slice(28));
+    return dec.decode(pt);
+  }
+
+  let unlocking = false;
+  async function unlock() {
+    const code = $("codeInput").value;
+    if (!code || unlocking) return;
+    if (!CONFIG.DATA_TERKUNCI.trim()) {
+      $("lockErr").textContent = "DATA_TERKUNCI masih kosong. Isi dulu dari buat-kode.html.";
+      return;
+    }
+    if (!(window.crypto && crypto.subtle)) {
+      $("lockErr").textContent = "Buka lewat alamat https:// supaya kode bisa dicek.";
+      return;
+    }
+    unlocking = true;
+    $("lockErr").textContent = "Memeriksa…";
+    try {
+      PESAN = JSON.parse(await decryptText(code, CONFIG.DATA_TERKUNCI));
+      $("codeInput").value = "";
+      $("lockErr").textContent = "";
+      vibrate(40);
+      show("intro");
+    } catch (e) {
+      $("lockErr").textContent = "Kode salah, coba lagi ya 😅";
+      const box = $("codeInput");
+      box.classList.remove("shake"); void box.offsetWidth; box.classList.add("shake");
+      vibrate([60, 40, 60]);
+    } finally {
+      unlocking = false;
+    }
+  }
+  $("unlockBtn").onclick = unlock;
+  $("codeInput").addEventListener("keydown", (e) => { if (e.key === "Enter") unlock(); });
+
+  // ---------- tombol ----------
+  $("startBtn").onclick = startGame;
+  $("giftBtn").onclick = () => {
+    confetti(160);
+    vibrate(60);
+    show("msg");
+    $("from").textContent = "";
+    buildDots();
+    showMessage(0);
+  };
+  $("nextBtn").onclick = () => {
+    if (idx >= PESAN.length - 1) {
+      PESAN = [];
+      show("lock");
+      return;
+    }
+    showMessage(idx + 1);
+  };
+  // ketuk kartu untuk melewati animasi ketik
+  document.querySelector(".card").addEventListener("click", () => { if (typing) doneTyping(); });
+</script>
+</body>
+</html>
